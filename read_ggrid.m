@@ -21,5 +21,7 @@ g_grid=g_grid(1:nz,:)+i*g_grid(nz+1:end,:);%this addition step is the most time-
 g_grid=g_grid(6:nz,1:end-1);
 fclose(fid);
 
+%% testing if this gets pushed to github
+
 
 %  figure(1); imagesc(10*log10(abs(g_grid)))

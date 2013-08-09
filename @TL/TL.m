@@ -31,6 +31,7 @@ classdef TL < handle
         y1; %source UTM Y
         x2; %receiver UTM X
         y2; %receiver UTM Y
+        RAMpath; %path to executable FORTRAN RAM code 
     end %properties 
     
     
@@ -61,10 +62,15 @@ classdef TL < handle
                 r.ssps = [r.ssps ssp]; 
             end
             r.dr = 1; 
-            r.dz = 0.2; 
-            
+            r.dz = 0.2;             
         end        
         
+        %% set RAM path 
+        
+        function r = setRAMpath(r, setpath)
+            r.RAMpath = setpath; 
+        end
+                
        
         %% get a transect for bathymetry 
         
@@ -215,13 +221,43 @@ classdef TL < handle
                                 r.maxRange,r.dr,r.frequency,r.dz,r.bathy);% write ram.in
             disp(['Done!' char(10) 'Running RAM...'])
             %replace the path below with path to your executable RAM file 
-            !/home/dtran/PEmodel/ramDD > temp 
+            commandStr = ['!' r.RAMpath 'ramDD > temp'];   
+%             !/home/dtran/PEmodel/ramDD > temp 
+            eval(commandStr); 
             disp(['Done!' char(10) 'Reading data out...']); 
             read_ggrid;
             r.gGrid = g_grid; 
             clear g_grid;
             disp('Done!'); 
         end
+        
+        %% calculate Green's function: run PE model for a vertical source array 
+        
+        function r = calculateGreenSourceArray(r, sourcetype)
+            
+            
+            % write source_spacing input file 
+            if strcmp(sourcetype, 'mod30') %if MOD-30 source array is used 
+                fid = fopen('source_spacing.in', 'wt'); 
+                fprintf(fid,'10\n0.8382\n0.8001\n0.8382\n0.8001\n0.8001\n0.8382\n0.8382\n0.8382\n0.8382\n'); 
+                fclose(fid); 
+            elseif strcmp(sourcetype, 'xf4') %if XF-4 source array is used 
+                fid = fopen('source_spacing.in', 'wt'); 
+                fprintf(fid, '7\n1.6256\n1.6256\n1.6256\n1.6256\n1.6256\n1.6256\n'); 
+                fclose(fid); 
+            end
+            
+            %
+            commandStr = ['!' r.RAMpath 'ram_1.5.3_src_array_64_bit.out']
+            eval(commandStr);             
+            disp(['Done!' char(10) 'Reading data out...']); 
+            read_ggrid;
+            r.gGrid = g_grid; 
+            clear g_grid;
+            disp('Done!');             
+            
+        end
+        
         
         %% calculate Green's function, Pekeris waveguide
         
